@@ -1,183 +1,196 @@
-project_purpose_md = """
-This project demonstrates Named Entity Recognition (NER) using the CoNLL-2003 dataset and a fine-tuned BERT-based model. NER is a crucial task in natural language processing that identifies and classifies named entities in text into predefined categories such as person names, organizations, locations, and more.
-"""
+# Named Entity Recognition (NER) with BERT (CoNLL-2003)
 
-required_libraries_md = """
-### Required Libraries
+A simple, reproducible project demonstrating Named Entity Recognition (NER) using the CoNLL-2003 dataset and a fine-tuned BERT-based token classification model (bert-base-cased). The project uses Hugging Face Transformers, Datasets, and PyTorch, and evaluates using seqeval.
 
-The following libraries are required to run this project:
-- `datasets`: For loading and managing the CoNLL-2003 dataset.
-- `seqeval`: For evaluating the performance of the NER model.
-- `transformers`: For using pre-trained models, tokenizers, and the `Trainer` API from Hugging Face.
-- `torch`: The underlying deep learning framework.
-- `numpy`: For numerical operations.
+---
 
-Installation:
+## Table of Contents
+
+- [Project Overview](#project-overview)
+- [Features](#features)
+- [Requirements](#requirements)
+- [Quick Start](#quick-start)
+- [Dataset (CoNLL-2003)](#dataset-conll-2003)
+- [Model & Tokenization](#model--tokenization)
+- [Token Labeling & -100 Explanation](#token-labeling---100-explanation)
+- [Training](#training)
+- [Evaluation](#evaluation)
+- [Results (example)](#results-example)
+
+---
+
+## Project Overview
+
+This repository shows how to fine-tune a pre-trained BERT model for token-level classification on the CoNLL-2003 NER dataset. It includes tokenization with alignment of labels to sub-tokens, training using the `Trainer` API, and evaluation with `seqeval`.
+
+---
+
+## Features
+
+- Uses `bert-base-cased` for token classification
+- Handles subword tokenization and label alignment
+- Training with Hugging Face `Trainer` and `DataCollatorForTokenClassification`
+- Evaluation using `seqeval` (precision / recall / F1 / accuracy)
+- Example evaluation metrics included
+
+---
+
+## Requirements
+
+Install the required Python libraries:
+
 ```bash
-!pip install datasets --no-build-isolation
-!pip install seqeval
-!pip install transformers[torch]
-```
-"""
-
-dataset_description_md = """
-### CoNLL-2003 Dataset Description
-
-The CoNLL-2003 dataset is widely used for training and evaluating Named Entity Recognition (NER) models. The dataset focuses on four types of named entities: persons (PER), locations (LOC), organizations (ORG), and miscellaneous entities (MISC).
-
-#### Dataset Structure:
-Each data file contains four columns separated by a single space:
-1. Word
-2. Part-of-Speech (POS) tag
-3. Syntactic chunk tag
-4. Named entity tag
-
-Words are listed on separate lines, and sentences are separated by a blank line.
-The chunk and named entity tags follow the IOB2 tagging scheme:
-- `B-TYPE`: Beginning of a phrase of type TYPE
-- `I-TYPE`: Inside a phrase of type TYPE
-- `O`: Outside any named entity phrase
-
-#### Example:
-```python
-{
-    "chunk_tags": [11, 12, 12, 21, 13, 11, 11, 21, 13, 11, 12, 13, 11, 21, 22, 11, 12, 17, 11, 21, 17, 11, 12, 12, 21, 22, 22, 13, 11, 0],
-    "id": "0",
-    "ner_tags": [0, 3, 4, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    "pos_tags": [12, 22, 22, 38, 15, 22, 28, 38, 15, 16, 21, 35, 24, 35, 37, 16, 21, 15, 24, 41, 15, 16, 21, 21, 20, 37, 40, 35, 21, 7],
-    "tokens": ["The", "European", "Commission", "said", "on", "Thursday", "it", "disagreed", "with", "German", "advice", "to", "consumers", "to", "shun", "British", "lamb", "until", "scientists", "determine", "whether", "mad", "cow", "disease", "can", "be", "transmitted", "to", "sheep", "."]
-}
+pip install datasets --no-build-isolation
+pip install seqeval
+pip install transformers[torch]
+pip install torch
+pip install numpy
 ```
 
-#### Named Entity Tags
-- **O**: Outside a named entity
-- **B-PER**: Beginning of a person's name
-- **I-PER**: Inside a person's name
-- **B-ORG**: Beginning of an organization name
-- **I-ORG**: Inside an organization name
-- **B-LOC**: Beginning of a location name
-- **I-LOC**: Inside a location name
-- **B-MISC**: Beginning of miscellaneous entity
-- **I-MISC**: Inside a miscellaneous entity
-"""
+(You may want to create and use a virtual environment.)
 
-model_architecture_md = """
-### Model Architecture
+---
 
-A `bert-base-cased` model from the Hugging Face Transformers library is used for token classification. This model is a pre-trained BERT variant that has been cased (distinguishes between \"hello\" and \"Hello\") and is suitable for various downstream NLP tasks including Named Entity Recognition. The final layer of the model is adapted for token classification with `num_labels=9`, corresponding to the number of unique NER tags in the CoNLL-2003 dataset (O, B-PER, I-PER, B-ORG, I-ORG, B-LOC, I-LOC, B-MISC, I-MISC).
+## Quick Start
 
-The model is initialized with pre-trained weights and fine-tuned on the CoNLL-2003 dataset.
-"""
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Sadat-Shakeeb/bert-ner-nlp.git
+   cd bert-ner-nlp
+   ```
 
-tokenization_labeling_md = """
-### Tokenization and Label Alignment
+2. Install dependencies (see Requirements section).
 
-The `AutoTokenizer` from `transformers` is used with the `bert-base-cased` checkpoint to convert text into token IDs. A custom function `tokenize_and_align_labels` is implemented to handle subword tokenization and align labels correctly.
+3. Prepare / download the CoNLL-2003 dataset (the `datasets` library makes this easy).
 
-#### Token Labeling in NER: Use of `-100`
+4. Run training script (example placeholder — replace with actual script name if different):
+   ```bash
+   python train.py --model_name_or_path bert-base-cased --dataset conll2003 --output_dir ./results
+   ```
 
-In Named Entity Recognition (NER) tasks, the label `-100` is commonly used to signify that certain tokens should be ignored during the loss calculation in model training. This approach helps focus the learning on meaningful parts of the data. Here's an overview of the types of tokens typically assigned a `-100` label:
+5. Evaluate / predict:
+   ```bash
+   python evaluate.py --model_dir ./results --dataset conll2003
+   ```
 
-### 1. **Subsequent Sub-tokens**
-After a word is split into multiple sub-tokens, only the first sub-token receives the actual entity label. Subsequent sub-tokens receive `-100` to ensure that entity labels are not incorrectly assigned to fragments of words.
+(Adjust script names and CLI args to match the repo's actual scripts.)
 
-### 2. **Special Tokens**
-Special tokens such as `[CLS]`, `[SEP]`, and `[PAD]` used for managing sequence boundaries and lengths in models like BERT are also assigned `-100` as they do not correspond to real words in the text.
+---
 
-### 3. **Non-Entity Tokens**
-In certain training setups, tokens that do not correspond to any entity and are not the focus of the task might also be marked with `-100`, especially in cases of imbalanced datasets.
+## Dataset (CoNLL-2003)
 
-#### Example
-- **Sentence**: \"John lives in New York\"
-- **Tokens**: `[\"[CLS]\", \"John\", \"lives\", \"in\", \"New\", \"York\", \"[SEP]\"]`
-- **Labels**: `[-100, \"B-PER\", \"O\", \"O\", \"B-LOC\", \"I-LOC\", -100]`
+CoNLL-2003 is a standard NER benchmark covering four entity types:
+- PER — Person
+- LOC — Location
+- ORG — Organization
+- MISC — Miscellaneous
 
-This labeling strategy is critical for efficient model training, ensuring that the model focuses only on relevant tokens. The `DataCollatorForTokenClassification` is used to dynamically pad inputs to the longest sequence in a batch.
-"""
+Format (simplified):
+- Each line: WORD POS CHUNK NER
+- Sentences separated by blank lines
+- The dataset uses the IOB2 scheme (B-*, I-*, O)
 
-training_process_md = """
-### Training Process
-
-The model is fine-tuned using the Hugging Face `Trainer` API. Key training arguments include:
-- **`output_dir`**: `./results` (directory to save model checkpoints and logs)
-- **`eval_strategy`**: `epoch` (evaluation performed at the end of each epoch)
-- **`learning_rate`**: `2e-5`
-- **`per_device_train_batch_size`**: `16`
-- **`per_device_eval_batch_size`**: `16`
-- **`num_train_epochs`**: `3`
-- **`weight_decay`**: `0.01`
-
-The `Trainer` is initialized with the fine-tuned model, training arguments, tokenized datasets (train and validation), tokenizer, data collator, and the custom `compute_metrics` function.
-"""
-
-evaluation_process_md = """
-### Evaluation Process
-
-The `seqeval` library is used to compute standard metrics for sequence labeling tasks (precision, recall, F1-score, and accuracy).
-
-#### `compute_metrics` Function:
-The `compute_metrics` function processes model predictions and true labels:
-1. It converts raw predictions (logits) to predicted label IDs using `argmax`.
-2. It filters out special tokens and ignored labels (`-100`) from both true and predicted labels.
-3. It maps label IDs back to their string representations (e.g., 0 to \"O\", 3 to \"B-PER\").
-4. It then uses `metric.compute()` from `seqeval` to calculate overall precision, recall, F1-score, and accuracy.
-"""
-
-evaluation_results_md = """
-### Evaluation Results
-
-After 3 epochs of training, the model achieves the following performance on the validation set:
-
+Example dataset entry (JSON-like excerpt):
 ```json
 {
-    \"eval_loss\": 0.03746436536312103,
-    \"eval_precision\": 0.9418546365914787,
-    \"eval_recall\": 0.9486704813194211,
-    \"eval_f1\": 0.9452502724909868,
-    \"eval_accuracy\": 0.9909076749347767,
-    \"eval_runtime\": 10.5735,
-    \"eval_samples_per_second\": 307.372,
-    \"eval_steps_per_second\": 19.294,
-    \"epoch\": 3.0
+  "tokens": ["The", "European", "Commission", "said", ...],
+  "pos_tags": [...],
+  "chunk_tags": [...],
+  "ner_tags": [...]
 }
 ```
 
-The model demonstrates strong performance with an F1-score of approximately `0.945` and an accuracy of `0.991`, indicating effective Named Entity Recognition capabilities on the CoNLL-2003 dataset.
-"""
+---
 
-readme_content = """
-# Named Entity Recognition Project
+## Model & Tokenization
 
-## Introduction
+- Model: `bert-base-cased` (Hugging Face Transformers) for `AutoModelForTokenClassification`.
+- Tokenizer: `AutoTokenizer` for the same checkpoint.
+- The tokenizer may split words into sub-tokens (WordPiece). You must align the original word-level labels to token-level labels.
 
-""" + project_purpose_md + """
+A typical pipeline:
+1. Load dataset with `datasets`.
+2. Create a `tokenize_and_align_labels` function which:
+   - Tokenizes each sentence with `is_split_into_words=True`.
+   - Maps word-level labels to token-level labels:
+     - First token of a word → original label (e.g., `B-PER`).
+     - Subsequent sub-tokens → `-100` to ignore in loss.
+   - Special tokens (`[CLS]`, `[SEP]`, padding) → `-100`.
 
-## Setup
+3. Use `DataCollatorForTokenClassification` to dynamically pad batches.
 
-""" + required_libraries_md + """
+---
 
-## Dataset
+## Token Labeling & -100 Explanation
 
-""" + dataset_description_md + """
+When a tokenizer splits a word into multiple sub-tokens, token classification models must not punish the model for predicting the same label on those sub-tokens. Common approach:
 
-## Model
+- Assign label for the first sub-token.
+- Assign -100 to subsequent sub-tokens (these are ignored by PyTorch loss functions).
+- Assign -100 to special tokens (`[CLS]`, `[SEP]`, `[PAD]`) because they don't correspond to actual words.
 
-""" + model_architecture_md + """
+Example:
+- Sentence: "John lives in New York"
+- Tokens: `[CLS] John liv ##es in New York [SEP]`
+- Labels: `[-100, B-PER, O, -100, O, B-LOC, I-LOC, -100]`
 
-## Tokenization and Labeling
+This ensures the loss is computed only for meaningful token positions.
 
-""" + tokenization_labeling_md + """
+---
 
-## Training
+## Training (example settings)
 
-""" + training_process_md + """
+Example Hugging Face `TrainingArguments` used for fine-tuning:
+
+- output_dir: `./results`
+- eval_strategy: `epoch`
+- learning_rate: `2e-5`
+- per_device_train_batch_size: `16`
+- per_device_eval_batch_size: `16`
+- num_train_epochs: `3`
+- weight_decay: `0.01`
+
+Trainer setup usually includes:
+- model (AutoModelForTokenClassification)
+- training args
+- train and eval datasets (tokenized)
+- tokenizer
+- data collator
+- compute_metrics function (see Evaluation section)
+
+---
 
 ## Evaluation
 
-""" + evaluation_process_md + """
+Use `seqeval` to compute precision, recall, F1, and accuracy for the sequence labeling task.
 
-## Results
+The `compute_metrics` function typically:
+1. Converts model logits to predicted label IDs with `argmax`.
+2. Iterates through the batch and filters out label positions with `-100` (these are ignored).
+3. Maps label IDs back to label strings (e.g., `0 -> "O"`, etc.).
+4. Calls `metric.compute()` from `seqeval` to calculate metrics.
 
-""" + evaluation_results_md
+---
 
-print("README content successfully assembled into `readme_content` variable.")
+## Results (example)
+
+After training for 3 epochs (example run), evaluation metrics on validation:
+
+```json
+{
+  "eval_loss": 0.03746436536312103,
+  "eval_precision": 0.9418546365914787,
+  "eval_recall": 0.9486704813194211,
+  "eval_f1": 0.9452502724909868,
+  "eval_accuracy": 0.9909076749347767,
+  "eval_runtime": 10.5735,
+  "eval_samples_per_second": 307.372,
+  "eval_steps_per_second": 19.294,
+  "epoch": 3.0
+}
+```
+
+This example shows a high F1 (~0.945) and accuracy (~0.991) on CoNLL-2003 validation data.
+
+---
+
