@@ -2,7 +2,7 @@
 
 A simple, reproducible project demonstrating Named Entity Recognition (NER) using the CoNLL-2003 dataset and a fine-tuned BERT-based token classification model (bert-base-cased). The project uses Hugging Face Transformers, Datasets, and PyTorch, and evaluates using seqeval.
 
----
+----
 
 ## Table of Contents
 
